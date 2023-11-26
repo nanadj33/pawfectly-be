@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::group(['prefix' => '/hospitals', 'middleware' => ['auth:sanctum']], function(){
+Route::group(['prefix' => '/hospitals', 'middleware' => ['checktoken']], function(){
     Route::get('', [HospitalController::class, 'hospital']);
     Route::post('', [HospitalController::class, 'store']);
     Route::put('/{hospital}', [HospitalController::class, 'update']);
@@ -31,4 +31,4 @@ Route::post('/register', [UserController::class, 'register']);
 
 Route::post('/login', [UserController::class, 'login']);
 
-Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/logout', [UserController::class, 'logout'])->middleware('checktoken');

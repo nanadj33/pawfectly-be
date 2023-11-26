@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Token;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,7 +37,8 @@ class UserController extends Controller
 
         $request->validate([
             'password' => 'required',
-            'username' => 'required|exists:users,username'
+            'username' => 'required|exists:users,username',
+            'device_id' => 'required'
         ]);
 
         $user = User::where('username', $request->username)->first();
@@ -46,7 +48,15 @@ class UserController extends Controller
             return response()->json($response);
         }
 
-        $token = $user->createToken('auth_type')->plainTextToken;
+        $hashtoken = Hash::make($request->device_id.$request->username);
+
+        $token =  new Token();
+        $token->device_id = $request->device_id;
+        $token->user_id = $user->id;
+        $token->token = $hashtoken;
+        $token->save();
+
+        // $token = $user->createToken('auth_type')->plainTextToken;
 
         $response['message'] = "Berhasil login!";
         $response['token'] = $token;
@@ -55,11 +65,24 @@ class UserController extends Controller
     }
 
     public function logout(Request $request){
+        $header = request()->header('Authorization');
+        $hashToken = explode(" ", $header)[1];
+        $token = Token::where('token', $hashToken)->first();
 
-        $user = auth()->user()->currentAccessToken()->delete();
+        $token->delete();
+        // $user = auth()->user()->currentAccessToken()->delete();
 
         $response['message'] = "Berhasil logout!";
 
         return response()->json($response);
+    }
+
+    public static function findUser(){
+        $header = request()->header('Authorization');
+        $hashToken = explode(" ", $header)[1];
+        $token = Token::where('token', $hashToken)->first();
+
+        $user = User::where('id', $token->user_id)->first();
+        return $user;
     }
 }
